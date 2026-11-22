@@ -1,6 +1,6 @@
 # Part 3: Prolog results (small instance)
 
-Run from the `alpes-advisor/` folder:
+Run from the alpes-advisor/ folder:
 
     swipl data/small/facts.pl prolog/rules.pl
 
@@ -38,14 +38,14 @@ Known altitudes of the 5 resorts:
 | domaine_de_praz_sur_arly | unknown | not listed | not listed |
 | saint_nicolas_de_veroce | unknown | not listed | not listed |
 
-- At 2000 m no resort qualifies, so findall returns the empty list `[]` (it does not fail).
+- At 2000 m no resort qualifies, so findall returns the empty list [] (it does not fail).
 - The 2 resorts with no altitude fact are never listed: an unknown altitude cannot be compared with the threshold.
 
 ## Q3.2: findall / setof / count, and highest_summit
 
 Communes with a resort: hauteluce (les_saisies), passy (flaine, plaine_joux), praz_sur_arly (domaine_de_praz_sur_arly), saint_gervais_les_bains (saint_nicolas_de_veroce).
 
-`commune_without_resort_near_resort(C)` succeeds once **per neighbouring commune with a resort**:
+commune_without_resort_near_resort(C) succeeds once **per neighbouring commune with a resort**:
 
 | C | Neighbours with a resort | Answers |
 |---|---|---|
@@ -64,9 +64,9 @@ Communes with a resort: hauteluce (les_saisies), passy (flaine, plaine_joux), pr
 
 - findall and count keep every answer, duplicates included (13).
 - setof sorts and removes duplicates (8 distinct communes, the real answer).
-- When the goal has no solution, setof (and bagof) **fails**, whereas findall returns `[]` and aggregate_all(count) returns 0.
+- When the goal has no solution, setof (and bagof) **fails**, whereas findall returns [] and aggregate_all(count) returns 0.
 
-`highest_summit(C, S, A)` uses `aggregate_all(max(A1, S1), Goal, max(A, S))` (maximum with a witness):
+highest_summit(C, S, A) uses aggregate_all(max(A1, S1), Goal, max(A, S)) (maximum with a witness):
 
     ?- highest_summit(saint_gervais_les_bains, S, A).   S = arete_de_tricot, A = 3221.
     ?- highest_summit(megeve, S, A).                    S = aiguille_croche, A = 2487.   (2472 and 2487 recorded: max keeps 2487)
@@ -80,9 +80,9 @@ When the commune has no summit with a known altitude, aggregate_all(max, …) **
     ?- communes_within(megeve, 2, L).   11 communes
     ?- communes_within(megeve, 3, L).   11 communes (all the other communes are already reached)
 
-- `reachable_naive/2` **does not terminate** when asked for all answers (stopped by a 3 s time limit). The neighbour graph has cycles (megeve → combloux → megeve → …) and Prolog's depth-first search follows them forever, returning the same communes again and again.
-- `reachable/2` with `:- table reachable/2.` terminates: tabling memorises the calls and answers already found, so cycles are detected and each answer is returned once (12 communes from megeve, megeve itself included).
-- `reaches/3` terminates because of the bound N, which decreases at each step; it explores at most N steps.
+- reachable_naive/2 **does not terminate** when asked for all answers (stopped by a 3 s time limit). The neighbour graph has cycles (megeve → combloux → megeve → …) and Prolog's depth-first search follows them forever, returning the same communes again and again.
+- reachable/2 with :- table reachable/2. terminates: tabling memorises the calls and answers already found, so cycles are detected and each answer is returned once (12 communes from megeve, megeve itself included).
+- reaches/3 terminates because of the bound N, which decreases at each step; it explores at most N steps.
 
 ## Q3.4: not_snowy and missing altitudes
 
@@ -90,8 +90,8 @@ When the commune has no summit with a known altitude, aggregate_all(max, …) **
     ?- findall(R, resort_without_altitude(R), L). [domaine_de_praz_sur_arly, saint_nicolas_de_veroce]                2 resorts
 
 - Only plaine_joux (1360 m) is really below the threshold; the 2 others are "not snowy" only because their altitude is unknown.
-- Test: adding `altitude(domaine_de_praz_sur_arly, 1600).` makes it snowy; not_snowy then returns 2 resorts.
-- So adding a fact **removed** a conclusion: negation as failure is **non-monotonic**. `\+ snowy(R)` means "snowy(R) cannot be proved", not "R is not snowy" (closed-world assumption: unknown is treated as false).
+- Test: adding altitude(domaine_de_praz_sur_arly, 1600). makes it snowy; not_snowy then returns 2 resorts.
+- So adding a fact **removed** a conclusion: negation as failure is **non-monotonic**. \+ snowy(R) means "snowy(R) cannot be proved", not "R is not snowy" (closed-world assumption: unknown is treated as false).
 
 ## Q3.5: inconsistencies
 
@@ -102,15 +102,15 @@ When the commune has no summit with a known altitude, aggregate_all(max, …) **
 | commune_without_department(C) | les_houches |
 | summit_without_massif(S) | none: every summit has an in_massif fact |
 
-"This summit belongs to no massif" is debatable: Prolog only says that no `in_massif` fact is **recorded**. The data is incomplete, so a missing fact can mean "unknown", not "false" (closed-world assumption again). On medium, 4 summits have no massif fact.
+"This summit belongs to no massif" is debatable: Prolog only says that no in_massif fact is **recorded**. The data is incomplete, so a missing fact can mean "unknown", not "false" (closed-world assumption again). On medium, 4 summits have no massif fact.
 
 ## Q3.6 = Q1.1 and Q1.2 (checked with Prolog on small)
 
-LocatedIn is read as the recorded `located_in/2` facts, Neighbour as `neighbour/2`.
+LocatedIn is read as the recorded located_in/2 facts, Neighbour as neighbour/2.
 
 | Formula | Satisfied? | Witness (Prolog query) |
 |---|---|---|
-| (a) transitivity | no | located_in(aiguille_croche, hauteluce), located_in(hauteluce, savoie), but no located_in(aiguille_croche, savoie) (26 such triples). It holds for `inside/2`, which is the closure. |
+| (a) transitivity | no | located_in(aiguille_croche, hauteluce), located_in(hauteluce, savoie), but no located_in(aiguille_croche, savoie) (26 such triples). It holds for inside/2, which is the closure. |
 | (b) symmetry | no | neighbour(combloux, sallanches) without neighbour(sallanches, combloux) |
 | (c) at most one department | yes | no commune is located in two departments |
 | (d) every summit in a commune | no | plateau_des_saix and signal_de_bisanne have no commune |
@@ -119,4 +119,4 @@ LocatedIn is read as the recorded `located_in/2` facts, Neighbour as `neighbour/
 | (E3) commune without resort next to a commune with one | yes | e.g. megeve, next to saint_gervais_les_bains |
 | (E4) no resort in a commune without department | yes | les_houches has no resort |
 
-Q1.2: (E1) is false, refuted by the commune les_houches, which has no `located_in(les_houches, D)` with D a department.
+Q1.2: (E1) is false, refuted by the commune les_houches, which has no located_in(les_houches, D) with D a department.

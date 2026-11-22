@@ -14,18 +14,29 @@ Pair: …   Instance: small
 | Q3.3 | communes_within(megeve, N): 7 / 11 / 11 for N = 1 / 2 / 3. reachable_naive does not terminate (cycles in the neighbour graph, depth-first search loops). Tabled reachable terminates (12 answers, each once); reaches/3 terminates thanks to the decreasing bound N. |
 | Q3.4 (not snowy resorts, resorts without altitude) | not_snowy: 3 (domaine_de_praz_sur_arly, plaine_joux, saint_nicolas_de_veroce); without altitude: 2 (domaine_de_praz_sur_arly, saint_nicolas_de_veroce). Adding altitude(domaine_de_praz_sur_arly, 1600) makes it snowy → not_snowy = 2. Adding a fact removed a conclusion: negation as failure is non-monotonic (unknown treated as false, closed world). |
 | Q3.5 | two_altitudes: aiguille_croche (2472, 2487); asymmetric_neighbour: combloux → sallanches; commune_without_department: les_houches; summit_without_massif: none (4 on medium). "No massif" is debatable: it only means no fact recorded; with incomplete data, unknown ≠ false. |
-| Q4.1 (k = 2 and 3: value, number of stays) | |
-| Q4.2 | |
-| Q4.3 – Q4.4 (medium: without "distinct communes"; k = 3, time, stays) | |
-| Q4.5 (brave / cautious, with an exception) | |
-| Q4.6 | |
+| Q4.1 (k = 2 and 3: value, number of stays) | k = 2: optimum 5773 (saint_nicolas_de_veroce 3221 + les_saisies 2552), 1 optimal stay. k = 3: optimum 7773 (+ flaine or plaine_joux, 2000, same commune passy), 2 optimal stays. Without #project (run with --project), answer sets that differ only in hidden atoms (step(S,M): saint_nicolas_de_veroce can take beaufortain or mont_blanc) are counted separately: k = 1 gives 2 answer sets for 1 stay; medium k = 3 gives 40 answer sets for 10 stays. |
+| Q4.2 | clingo prints Optimization: -5773 (k = 2) and -7773 (k = 3). The solver only minimises: #maximize { H,S : … } is rewritten as #minimize { -H,S : … }, so the printed cost is the negated sum. Real optimum = 5773 / 7773. |
+| Q4.3 – Q4.4 (medium: without "distinct communes"; k = 3, time, stays) | Q4.3 (medium, k = 3): with distinct communes, optimum 13523, 10 optimal stays (1 of the 5 Chamonix resorts 4806 + saint_nicolas_de_veroce 4806 + 1 of the 2 Les Contamines resorts 3911). Without it, optimum 14418 = 3 × 4806, 20 optimal stays = C(6,3): any 3 of the 6 resorts scoring 4806 (5 in chamonix_mont_blanc, whose summits span 3 massifs, + saint_nicolas). Removing a constraint can only raise the optimum and here doubles the number of optimal stays.<br>Q4.4 (medium, k = 3, --opt-mode=optN --project): 0.036 s, optimum 13523, 10 distinct optimal stays; ground program ≈ 4 200 atoms, 4 500 rules. Propositional resolution: ≈ 1.25·10⁸ clauses just to write medium, and already > 100 000 resolvents for 14 entities. ASP grounds only the instances the rules need (no n³ blow-up) and the solver prunes with constraints. |
+| Q4.5 (brave / cautious, with an exception) | 4 answer sets (2 resorts with unknown altitude, each snowy or not). Brave: flaine, les_saisies, domaine_de_praz_sur_arly, saint_nicolas_de_veroce. Cautious: flaine, les_saisies. With exception(flaine): brave = les_saisies, domaine_de_praz_sur_arly, saint_nicolas_de_veroce; cautious = les_saisies (flaine disappears from both). Default negation (not exception) is non-monotonic: adding a fact removes a conclusion. Unlike Prolog's \+, unknown altitude is not "false": it gives several answer sets (possible = brave, never cautious). |
+| Q4.6 | Small: inconsistency(two_altitudes, aiguille_croche), inconsistency(commune_without_department, les_houches), inconsistency(asymmetric_neighbour, combloux, sallanches); no summit_without_massif. Medium: 7 two_altitudes, 4 summit_without_massif. Exactly the same as Prolog. Differences: ASP returns all of them in one answer set and, being sets, without duplicates (Prolog needs distinct/2: 2 raw answers per entity); both rely on negation as failure (closed world), so "missing" is reported, not proven false. |
 
 ## Comparison
 | | Propositional resolution | Prolog | ASP |
 |---|---|---|---|
-| Expressiveness | | | |
-| Missing information | | | |
-| Termination | | | |
-| Explainability | | | |
+| Expressiveness | Low: no variables, every axiom grounded on all entities (transitivity → n³ clauses); only yes/no entailment | First-order Horn rules with variables, recursion, lists, aggregates (setof, findall, max); query-driven | Rules with variables plus choice rules, constraints, aggregates (#max) and optimisation (#maximize): describes and finds solutions (stays) |
+| Missing information | Open world: unprovable ≠ false (les_houches goal: no □, unit resolution saturates) | Closed world, negation as failure: unknown = false (resorts without altitude are not_snowy) | Default negation + choice rules: unknown altitude gives several answer sets (snowy brave, not cautious); exceptions handled by defaults |
+| Termination | Guaranteed only in theory (finite atoms) but explodes; needs a cap (naive/sos reach 100 000 at n = 14) | Not guaranteed: left recursion / cycles loop (reachable_naive); fixed by tabling or a bound (reaches/3) | Always terminates (finite grounding); fast on medium (k = 3: 0.036 s) |
+| Explainability | Good: the refutation is an explicit proof (sequence of resolvents ending in □) | Good: the SLD derivation / trace shows which facts and rules were used | Weaker: an answer set is a model, not a proof; the optimum is shown, not why other stays are worse |
 
 ## First-order axioms (list or diagram)
+L = LocatedIn, N = Neighbour. Hierarchy: summit / resort → commune → department → region (L); summit → massif (InMassif).
+
+- (a) ∀x∀y∀z (L(x,y) ∧ L(y,z) → L(x,z))
+- (b) ∀x∀y (N(x,y) → N(y,x))
+- (c) ∀c∀d₁∀d₂ (Commune(c) ∧ Department(d₁) ∧ Department(d₂) ∧ L(c,d₁) ∧ L(c,d₂) → d₁ = d₂)
+- (d) ∀s (Summit(s) → ∃c (Commune(c) ∧ L(s,c)))
+- (E1) ∀c (Commune(c) → ∃d (Department(d) ∧ L(c,d)))
+- (E2) ∀m (Massif(m) → ∃s (Summit(s) ∧ InMassif(s,m) ∧ High(s)))
+- (E3) ∃c∃c′ (Commune(c) ∧ ¬∃r (Resort(r) ∧ L(r,c)) ∧ Commune(c′) ∧ ∃r′ (Resort(r′) ∧ L(r′,c′)) ∧ N(c,c′))
+- (E4) ¬∃r∃c (Resort(r) ∧ Commune(c) ∧ L(r,c) ∧ ¬∃d (Department(d) ∧ L(c,d)))
+- (I) ∀x ¬L(x,x)   (S) ∀x∃y L(x,y). Every model of {a, I, S} is infinite (chain a₀, a₁, … all distinct); infinite model: (ℕ, <). The instance violates (S): auvergne_rhone_alpes lies in nothing.
